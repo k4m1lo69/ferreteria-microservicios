@@ -43,7 +43,21 @@ public class ProductoController {
         return ResponseEntity.ok(productoService.update(id, dto));
     }
 
-    @
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> delete(@PathVariable Long id) {
+        if (productoService.delete(id)) {
+            return ResponseEntity.ok("Producto elominado correctamente");
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body("Producto no encontrado");
+    }
+
+    @GetMapping("/categoria/{categoria}")
+    public ResponseEntity<List<ProductoDTO>> getByCatecoria(
+            @PathVariable String categoria) {
+        return ResponseEntity.ok(
+                        productoService.getByCategoria(categoria));
+    }
 
 
 }
