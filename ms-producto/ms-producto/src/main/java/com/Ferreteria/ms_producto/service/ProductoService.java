@@ -65,7 +65,7 @@ public class ProductoService {
 
     public boolean delete(Long id) {
         if (productoRepository.existsById(id)) {
-            productoRepository.existsById(id);
+            productoRepository.deleteById(id);
             log.info("Producto eliminado {}", id);
             return true;
         }
