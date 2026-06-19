@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ExternalStorageConfigurationManager" enabled="true" />
+  <component name="MavenProjectsManager">
+    <option name="originalFiles">
+      <list>
+        <option value="$PROJECT_DIR$/ms-auth/ms-auth/pom.xml" />
+        <option value="$PROJECT_DIR$/ms-pagos/ms-pagos/pom.xml" />
+        <option value="$PROJECT_DIR$/ms-pedidos/ms-pedidos/pom.xml" />
+        <option value="$PROJECT_DIR$/ms-clientes/ms-clientes/pom.xml" />
+        <option value="$PROJECT_DIR$/ms-producto/ms-producto/pom.xml" />
+        <option value="$PROJECT_DIR$/ms-reportes/ms-reportes/pom.xml" />
+        <option value="$PROJECT_DIR$/ms-inventarios/ms-inventarios/pom.xml" />
+      </list>
+    </option>
+  </component>
+  <component name="ProjectRootManager" version="2" project-jdk-name="openjdk-26" project-jdk-type="JavaSDK">
+    <output url="file://$PROJECT_DIR$/out" />
+  </component>
+</project>
