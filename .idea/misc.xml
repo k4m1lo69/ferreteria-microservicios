@@ -11,6 +11,7 @@
         <option value="$PROJECT_DIR$/ms-producto/ms-producto/pom.xml" />
         <option value="$PROJECT_DIR$/ms-reportes/ms-reportes/pom.xml" />
         <option value="$PROJECT_DIR$/ms-inventarios/ms-inventarios/pom.xml" />
+        <option value="$PROJECT_DIR$/api-gateway/api-gateway/pom.xml" />
       </list>
     </option>
   </component>

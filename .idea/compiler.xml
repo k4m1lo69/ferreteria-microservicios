@@ -9,19 +9,27 @@
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="false">
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.38/lombok-1.18.38.jar" />
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.38/lombok-1.18.38.jar" />
         </processorPath>
         <module name="ms-auth" />
         <module name="ms-reportes" />
-        <module name="ms-clientes" />
         <module name="ms-productos" />
         <module name="ms-pedidos" />
+        <module name="ms-clientes" />
         <module name="ms-pagos" />
         <module name="ms-inventario" />
+      </profile>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="api-gateway" />
       </profile>
     </annotationProcessing>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="api-gateway" options="-parameters" />
       <module name="ms-auth" options="-parameters" />
       <module name="ms-clientes" options="-parameters" />
       <module name="ms-inventario" options="-parameters" />
