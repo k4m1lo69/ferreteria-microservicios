@@ -102,7 +102,25 @@ public class InventarioService {
                 .orElseThrow(() -> new RuntimeException("Inventario no encontrado"));
     }
 
+    public synchronized InventarioDTO descontarStock(Long productoId, Integer cantidad) {
 
+        Inventario inventario = inventarioRepository.findByProductoId(productoId)
+                .orElseThrow(() -> new RuntimeException(
+                        "Inventario no encontrado para producto " + productoId));
+
+        if (inventario.getCantidad() < cantidad) {
+            throw new RuntimeException(
+                    "Stock insuficiente. Disponible: " + inventario.getCantidad()
+                            + ", solicitado: " + cantidad);
+        }
+
+        inventario.setCantidad(inventario.getCantidad() - cantidad);
+
+        log.info("Stock descontado: producto {} -{} unidades (queda: {})",
+                productoId, cantidad, inventario.getCantidad());
+
+        return convertirADTO(inventarioRepository.save(inventario));
+    }
 
     private InventarioDTO convertirADTO(Inventario inventario) {
         return InventarioDTO.builder()

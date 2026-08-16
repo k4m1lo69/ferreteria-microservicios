@@ -13,6 +13,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -57,6 +58,18 @@ public class PedidoService {
 
         Pedido saved = pedidoRepository.save(pedido);
 
+        // Solo se descuenta stock DESPUES de guardar el pedido con exito.
+        // Si el descuento falla, revertimos el pedido a estado FALLIDO en vez
+        // de dejar el pedido "fantasma" sin stock real reservado.
+        try {
+            descontarStock(dto.getProductoId(), dto.getCantidad());
+        } catch (Exception e) {
+            log.error("No se pudo descontar stock para pedido {}: {}", saved.getId(), e.getMessage());
+            saved.setEstado("FALLIDO");
+            saved = pedidoRepository.save(saved);
+            throw new RuntimeException("Pedido creado pero no se pudo confirmar el stock: " + e.getMessage());
+        }
+
         log.info("Pedido creado: {}", saved.getId());
 
         return convertirADTO(saved);
@@ -90,6 +103,15 @@ public class PedidoService {
             log.error("Error consultando ms-inventarios: {}", e.getMessage());
             throw new RuntimeException("ms-inventarios no disponible en este momento");
         }
+    }
+
+    private void descontarStock(Long productoId, Integer cantidad) {
+        webClient.patch()
+                .uri("http://ms-inventarios/api/inventarios/producto/{productoId}/descontar", productoId)
+                .bodyValue(Map.of("cantidad", cantidad))
+                .retrieve()
+                .bodyToMono(InventarioDTO.class)
+                .block();
     }
 
     public List<PedidoDTO> getAll() {

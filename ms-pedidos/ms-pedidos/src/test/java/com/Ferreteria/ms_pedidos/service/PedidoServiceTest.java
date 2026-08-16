@@ -33,14 +33,23 @@ class PedidoServiceTest {
     @Mock
     private WebClient webClient;
 
+    // GET (producto / inventario)
     @Mock
     private WebClient.RequestHeadersUriSpec requestHeadersUriSpec;
-
     @Mock
     private WebClient.RequestHeadersSpec requestHeadersSpec;
-
     @Mock
     private WebClient.ResponseSpec responseSpec;
+
+    // PATCH (descontar stock) - mocks separados para no pisar los del GET
+    @Mock
+    private WebClient.RequestBodyUriSpec requestBodyUriSpec;
+    @Mock
+    private WebClient.RequestBodySpec requestBodySpec;
+    @Mock
+    private WebClient.RequestHeadersSpec requestHeadersSpecPatch;
+    @Mock
+    private WebClient.ResponseSpec patchResponseSpec;
 
     private PedidoService pedidoService;
 
@@ -51,8 +60,25 @@ class PedidoServiceTest {
         pedidoService = new PedidoService(pedidoRepository, webClientBuilder);
     }
 
+    private void mockGets(ProductoDTO producto, InventarioDTO inventario) {
+        when(webClient.get()).thenReturn(requestHeadersUriSpec);
+        when(requestHeadersUriSpec.uri(anyString(), any(Object[].class)))
+                .thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.bodyToMono(eq(ProductoDTO.class))).thenReturn(Mono.just(producto));
+        when(responseSpec.bodyToMono(eq(InventarioDTO.class))).thenReturn(Mono.just(inventario));
+    }
+
+    private void mockPatch(InventarioDTO resultado) {
+        when(webClient.patch()).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.uri(anyString(), any(Object[].class))).thenReturn(requestBodySpec);
+        when(requestBodySpec.bodyValue(any())).thenReturn(requestHeadersSpecPatch);
+        when(requestHeadersSpecPatch.retrieve()).thenReturn(patchResponseSpec);
+        when(patchResponseSpec.bodyToMono(eq(InventarioDTO.class))).thenReturn(Mono.just(resultado));
+    }
+
     @Test
-    @DisplayName("Debe crear pedido cuando hay stock disponible")
+    @DisplayName("Debe crear pedido y descontar stock cuando hay disponible")
     void testCrearPedidoConStockDisponible() {
         PedidoDTO dto = PedidoDTO.builder()
                 .clienteId(1L)
@@ -74,6 +100,13 @@ class PedidoServiceTest {
                 .cantidadMinima(2)
                 .build();
 
+        InventarioDTO inventarioDescontado = InventarioDTO.builder()
+                .id(1L)
+                .productoId(1L)
+                .cantidad(5)
+                .cantidadMinima(2)
+                .build();
+
         Pedido pedidoGuardado = Pedido.builder()
                 .id(1L)
                 .clienteId(1L)
@@ -85,12 +118,8 @@ class PedidoServiceTest {
                 .fecha(LocalDateTime.now())
                 .build();
 
-        when(webClient.get()).thenReturn(requestHeadersUriSpec);
-        when(requestHeadersUriSpec.uri(anyString(), any(Object[].class)))
-                .thenReturn(requestHeadersSpec);
-        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
-        when(responseSpec.bodyToMono(eq(ProductoDTO.class))).thenReturn(Mono.just(producto));
-        when(responseSpec.bodyToMono(eq(InventarioDTO.class))).thenReturn(Mono.just(inventario));
+        mockGets(producto, inventario);
+        mockPatch(inventarioDescontado);
 
         when(pedidoRepository.save(any(Pedido.class))).thenReturn(pedidoGuardado);
 
@@ -99,7 +128,8 @@ class PedidoServiceTest {
         assertNotNull(resultado);
         assertEquals("CONFIRMADO", resultado.getEstado());
         assertEquals(500.0, resultado.getTotal());
-        verify(pedidoRepository, times(1)).save(any(Pedido.class));
+        verify(pedidoRepository, atLeastOnce()).save(any(Pedido.class));
+        verify(webClient, times(1)).patch();
     }
 
     @Test
@@ -125,15 +155,11 @@ class PedidoServiceTest {
                 .cantidadMinima(2)
                 .build();
 
-        when(webClient.get()).thenReturn(requestHeadersUriSpec);
-        when(requestHeadersUriSpec.uri(anyString(), any(Object[].class)))
-                .thenReturn(requestHeadersSpec);
-        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
-        when(responseSpec.bodyToMono(eq(ProductoDTO.class))).thenReturn(Mono.just(producto));
-        when(responseSpec.bodyToMono(eq(InventarioDTO.class))).thenReturn(Mono.just(inventario));
+        mockGets(producto, inventario);
 
         assertThrows(RuntimeException.class, () -> pedidoService.save(dto));
         verify(pedidoRepository, never()).save(any());
+        verify(webClient, never()).patch();
     }
 
     @Test

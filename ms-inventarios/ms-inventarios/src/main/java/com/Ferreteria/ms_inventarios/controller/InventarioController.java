@@ -9,6 +9,7 @@ import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/inventarios")
@@ -78,5 +79,27 @@ public class InventarioController {
 
         return ResponseEntity.ok(
                 inventarioService.getByProductoId(productoId));
+    }
+
+    @PatchMapping("/producto/{productoId}/descontar")
+    @Operation(summary = "Descuenta stock de un producto tras confirmar un pedido")
+    @ApiResponse(responseCode = "200", description = "Stock descontado")
+    @ApiResponse(responseCode = "409", description = "Stock insuficiente")
+    @ApiResponse(responseCode = "404", description = "Inventario no encontrado")
+    public ResponseEntity<InventarioDTO> descontarStock(
+            @PathVariable Long productoId,
+            @RequestBody Map<String, Integer> body) {
+
+        Integer cantidad = body.get("cantidad");
+
+        try {
+            return ResponseEntity.ok(
+                    inventarioService.descontarStock(productoId, cantidad));
+        } catch (RuntimeException e) {
+            if (e.getMessage() != null && e.getMessage().startsWith("Stock insuficiente")) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).build();
+            }
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 }
