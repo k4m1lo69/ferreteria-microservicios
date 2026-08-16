@@ -9,39 +9,46 @@ spring:
           routes:
 
             - id: ms-auth
-              uri: http://host.docker.internal:8080
+              uri: lb://ms-auth
               predicates:
                 - Path=/api/auth/**
 
             - id: ms-producto
-              uri: http://host.docker.internal:8081
+              uri: lb://ms-producto
               predicates:
                 - Path=/api/productos/**
 
             - id: ms-pedidos
-              uri: http://host.docker.internal:8082
+              uri: lb://ms-pedidos
               predicates:
                 - Path=/api/pedidos/**
 
             - id: ms-clientes
-              uri: http://host.docker.internal:8083
+              uri: lb://ms-clientes
               predicates:
                 - Path=/api/clientes/**
 
             - id: ms-pagos
-              uri: http://host.docker.internal:8084
+              uri: lb://ms-pagos
               predicates:
                 - Path=/api/pagos/**
 
             - id: ms-reportes
-              uri: http://host.docker.internal:8085
+              uri: lb://ms-reportes
               predicates:
                 - Path=/api/reportes/**
 
             - id: ms-inventarios
-              uri: http://host.docker.internal:8086
+              uri: lb://ms-inventarios
               predicates:
                 - Path=/api/inventarios/**
 
 server:
   port: 8090
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
