@@ -9,7 +9,7 @@ server:
   port: 8082
 
 jwt:
-  secret: ferreteria_secret_key_2024_must_be_at_least_256_bits_long_secure
+  secret: ${JWT_SECRET:ferreteria_secret_key_2024_must_be_at_least_256_bits_long_secure}
   expiration: 86400000
 
 eureka:
