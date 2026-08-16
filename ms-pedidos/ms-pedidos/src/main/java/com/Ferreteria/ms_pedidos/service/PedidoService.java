@@ -1,11 +1,15 @@
 package com.Ferreteria.ms_pedidos.service;
 
+import com.Ferreteria.ms_pedidos.dto.InventarioDTO;
 import com.Ferreteria.ms_pedidos.dto.PedidoDTO;
+import com.Ferreteria.ms_pedidos.dto.ProductoDTO;
 import com.Ferreteria.ms_pedidos.model.Pedido;
 import com.Ferreteria.ms_pedidos.repository.PedidoRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,23 +22,36 @@ public class PedidoService {
             LoggerFactory.getLogger(PedidoService.class);
 
     private final PedidoRepository pedidoRepository;
+    private final WebClient webClient;
 
-    public PedidoService(PedidoRepository pedidoRepository) {
+    public PedidoService(PedidoRepository pedidoRepository,
+                          WebClient.Builder webClientBuilder) {
         this.pedidoRepository = pedidoRepository;
+        this.webClient = webClientBuilder.build();
     }
 
     public PedidoDTO save(PedidoDTO dto) {
 
-        Double total =
-                dto.getCantidad() * dto.getPrecioUnitario();
+        ProductoDTO producto = obtenerProducto(dto.getProductoId());
+        InventarioDTO inventario = obtenerInventario(dto.getProductoId());
+
+        if (inventario.getCantidad() < dto.getCantidad()) {
+            throw new RuntimeException(
+                    "Stock insuficiente para el producto "
+                            + producto.getNombre()
+                            + " (disponible: " + inventario.getCantidad() + ")");
+        }
+
+        Double precioReal = producto.getPrecio();
+        Double total = dto.getCantidad() * precioReal;
 
         Pedido pedido = Pedido.builder()
                 .clienteId(dto.getClienteId())
                 .productoId(dto.getProductoId())
                 .cantidad(dto.getCantidad())
-                .precioUnitario(dto.getPrecioUnitario())
+                .precioUnitario(precioReal)
                 .total(total)
-                .estado("PENDIENTE")
+                .estado("CONFIRMADO")
                 .fecha(LocalDateTime.now())
                 .build();
 
@@ -43,6 +60,36 @@ public class PedidoService {
         log.info("Pedido creado: {}", saved.getId());
 
         return convertirADTO(saved);
+    }
+
+    private ProductoDTO obtenerProducto(Long productoId) {
+        try {
+            return webClient.get()
+                    .uri("http://ms-producto/api/productos/{id}", productoId)
+                    .retrieve()
+                    .bodyToMono(ProductoDTO.class)
+                    .block();
+        } catch (WebClientResponseException.NotFound e) {
+            throw new RuntimeException("Producto no encontrado: " + productoId);
+        } catch (Exception e) {
+            log.error("Error consultando ms-producto: {}", e.getMessage());
+            throw new RuntimeException("ms-producto no disponible en este momento");
+        }
+    }
+
+    private InventarioDTO obtenerInventario(Long productoId) {
+        try {
+            return webClient.get()
+                    .uri("http://ms-inventarios/api/inventarios/producto/{productoId}", productoId)
+                    .retrieve()
+                    .bodyToMono(InventarioDTO.class)
+                    .block();
+        } catch (WebClientResponseException.NotFound e) {
+            throw new RuntimeException("No hay inventario registrado para el producto: " + productoId);
+        } catch (Exception e) {
+            log.error("Error consultando ms-inventarios: {}", e.getMessage());
+            throw new RuntimeException("ms-inventarios no disponible en este momento");
+        }
     }
 
     public List<PedidoDTO> getAll() {
