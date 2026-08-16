@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -29,5 +30,9 @@ public class Cliente {
 
     @Column(nullable = false, length = 200)
     private String direccion;
+
+    @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<Direccion> direcciones = new ArrayList<>();
 
 }
