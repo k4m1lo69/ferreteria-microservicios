@@ -1,0 +1,171 @@
+services:
+
+  mysql:
+    image: mysql:8.0
+    container_name: ferreteria-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ALLOW_EMPTY_PASSWORD: "no"
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./docker/mysql-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  ms-eureka:
+    build: ./ms-eureka/ms-eureka
+    container_name: ms-eureka
+    ports:
+      - "8761:8761"
+
+  ms-auth:
+    build: ./ms-auth/ms-auth
+    container_name: ms-auth
+    depends_on:
+      mysql:
+        condition: service_healthy
+      ms-eureka:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DATABASE_URL: jdbc:mysql://mysql:3306/db_auth?useSSL=false&serverTimezone=UTC
+      DATABASE_USER: root
+      DATABASE_PASSWORD: root
+      EUREKA_URL: http://ms-eureka:8761/eureka/
+      JWT_SECRET: ferreteria_secret_key_2024_must_be_at_least_256_bits_long_secure
+    ports:
+      - "8080:8080"
+
+  ms-producto:
+    build: ./ms-producto/ms-producto
+    container_name: ms-producto
+    depends_on:
+      mysql:
+        condition: service_healthy
+      ms-eureka:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DATABASE_URL: jdbc:mysql://mysql:3306/db_productos?useSSL=false&serverTimezone=UTC
+      DATABASE_USER: root
+      DATABASE_PASSWORD: root
+      EUREKA_URL: http://ms-eureka:8761/eureka/
+      JWT_SECRET: ferreteria_secret_key_2024_must_be_at_least_256_bits_long_secure
+    ports:
+      - "8081:8081"
+
+  ms-pedidos:
+    build: ./ms-pedidos/ms-pedidos
+    container_name: ms-pedidos
+    depends_on:
+      mysql:
+        condition: service_healthy
+      ms-eureka:
+        condition: service_started
+      ms-producto:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DATABASE_URL: jdbc:mysql://mysql:3306/db_pedidos?useSSL=false&serverTimezone=UTC
+      DATABASE_USER: root
+      DATABASE_PASSWORD: root
+      EUREKA_URL: http://ms-eureka:8761/eureka/
+      JWT_SECRET: ferreteria_secret_key_2024_must_be_at_least_256_bits_long_secure
+    ports:
+      - "8082:8082"
+
+  ms-clientes:
+    build: ./ms-clientes/ms-clientes
+    container_name: ms-clientes
+    depends_on:
+      mysql:
+        condition: service_healthy
+      ms-eureka:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DATABASE_URL: jdbc:mysql://mysql:3306/db_clientes?useSSL=false&serverTimezone=UTC
+      DATABASE_USER: root
+      DATABASE_PASSWORD: root
+      EUREKA_URL: http://ms-eureka:8761/eureka/
+      JWT_SECRET: ferreteria_secret_key_2024_must_be_at_least_256_bits_long_secure
+    ports:
+      - "8083:8083"
+
+  ms-pagos:
+    build: ./ms-pagos/ms-pagos
+    container_name: ms-pagos
+    depends_on:
+      mysql:
+        condition: service_healthy
+      ms-eureka:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DATABASE_URL: jdbc:mysql://mysql:3306/db_pagos?useSSL=false&serverTimezone=UTC
+      DATABASE_USER: root
+      DATABASE_PASSWORD: root
+      EUREKA_URL: http://ms-eureka:8761/eureka/
+      JWT_SECRET: ferreteria_secret_key_2024_must_be_at_least_256_bits_long_secure
+    ports:
+      - "8084:8084"
+
+  ms-reportes:
+    build: ./ms-reportes/ms-reportes
+    container_name: ms-reportes
+    depends_on:
+      mysql:
+        condition: service_healthy
+      ms-eureka:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DATABASE_URL: jdbc:mysql://mysql:3306/db_reportes?useSSL=false&serverTimezone=UTC
+      DATABASE_USER: root
+      DATABASE_PASSWORD: root
+      EUREKA_URL: http://ms-eureka:8761/eureka/
+      JWT_SECRET: ferreteria_secret_key_2024_must_be_at_least_256_bits_long_secure
+    ports:
+      - "8085:8085"
+
+  ms-inventarios:
+    build: ./ms-inventarios/ms-inventarios
+    container_name: ms-inventarios
+    depends_on:
+      mysql:
+        condition: service_healthy
+      ms-eureka:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DATABASE_URL: jdbc:mysql://mysql:3306/db_inventarios?useSSL=false&serverTimezone=UTC
+      DATABASE_USER: root
+      DATABASE_PASSWORD: root
+      EUREKA_URL: http://ms-eureka:8761/eureka/
+      JWT_SECRET: ferreteria_secret_key_2024_must_be_at_least_256_bits_long_secure
+    ports:
+      - "8086:8086"
+
+  api-gateway:
+    build: ./api-gateway/api-gateway
+    container_name: api-gateway
+    depends_on:
+      - ms-auth
+      - ms-producto
+      - ms-pedidos
+      - ms-clientes
+      - ms-pagos
+      - ms-reportes
+      - ms-inventarios
+    environment:
+      EUREKA_URL: http://ms-eureka:8761/eureka/
+    ports:
+      - "8090:8090"
+
+volumes:
+  mysql-data:
