@@ -81,4 +81,43 @@ class InventarioServiceTest {
 
         assertEquals(150, resultado.getCantidad());
     }
+
+    @Test
+    @DisplayName("Debe descontar stock cuando hay suficiente cantidad")
+    void testDescontarStockConCantidadSuficiente() {
+        Inventario inventario = new Inventario(1L, 1L, 100, 5, "Pasillo A");
+        Inventario inventarioDescontado = new Inventario(1L, 1L, 95, 5, "Pasillo A");
+
+        when(inventarioRepository.findByProductoId(1L)).thenReturn(Optional.of(inventario));
+        when(inventarioRepository.save(any())).thenReturn(inventarioDescontado);
+
+        InventarioDTO resultado = inventarioService.descontarStock(1L, 5);
+
+        assertEquals(95, resultado.getCantidad());
+        verify(inventarioRepository, times(1)).save(any());
+    }
+
+    @Test
+    @DisplayName("Debe rechazar el descuento cuando no hay stock suficiente")
+    void testDescontarStockSinStockSuficiente() {
+        Inventario inventario = new Inventario(1L, 1L, 3, 5, "Pasillo A");
+
+        when(inventarioRepository.findByProductoId(1L)).thenReturn(Optional.of(inventario));
+
+        assertThrows(RuntimeException.class, () ->
+                inventarioService.descontarStock(1L, 10));
+
+        verify(inventarioRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Debe lanzar excepcion si no existe inventario para el producto")
+    void testDescontarStockProductoSinInventario() {
+        when(inventarioRepository.findByProductoId(99L)).thenReturn(Optional.empty());
+
+        assertThrows(RuntimeException.class, () ->
+                inventarioService.descontarStock(99L, 1));
+
+        verify(inventarioRepository, never()).save(any());
+    }
 }
